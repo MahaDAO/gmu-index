@@ -1,172 +1,100 @@
-require('dotenv').config()
-const request = require('request-promise')
-const CoinGecko = require('coingecko-api');
+require("dotenv").config();
+const request = require("request-promise");
+const CoinGecko = require("coingecko-api");
 const CoinGeckoClient = new CoinGecko();
-const csv = require('csv-parser')
-const fs = require('fs')
-const results = [];
+const csv = require("csv-parser");
+const fs = require("fs");
 
 const sendRequest = async (method, url, body) => {
-    const option = {
-        'method': method,
-        'url': url,
-        body: JSON.stringify(body)
-    }
+  const option = {
+    method: method,
+    url: url,
+    body: JSON.stringify(body),
+  };
 
-    return await request(option)
-}
+  return await request(option);
+};
 
 const goldPriceRequest = async (method, url) => {
-    const option = {
-        'method': method,
-        'url': url,
-        'headers': {
-            'x-access-token': process.env.GOLD_API
-        }
-    }
+  const option = {
+    method: method,
+    url: url,
+    headers: {
+      "x-access-token": process.env.GOLD_API,
+    },
+  };
 
-    return await request(option)
-}
+  return await request(option);
+};
 
 const GMU = async () => {
-    let storedFiatValues: any = {}
+  const storedFiatValues: any = {};
 
-    const data = await sendRequest(
-        'GET', 
-        'https://api.ratesapi.io/api/latest?base=USD',
-        ''
-    )
-    
-    let parsedData = await JSON.parse(data)
-    storedFiatValues.USD = parsedData.rates.USD       
-    storedFiatValues.EUR = parsedData.rates.EUR
-    storedFiatValues.CNY = parsedData.rates.CNY
-    storedFiatValues.JPY = parsedData.rates.JPY
-    storedFiatValues.INR = parsedData.rates.INR
-    storedFiatValues.GBP = parsedData.rates.GBP
-    storedFiatValues.BRL = parsedData.rates.BRL
-    storedFiatValues.CAD = parsedData.rates.CAD
-    storedFiatValues.CHF = parsedData.rates.CHF
-    
-    let usdWorth = ( parsedData.rates.USD / 100 ) * 29.93
-    let euroWorth = ( parsedData.rates.EUR / 100 ) * 23.23
-    let yuanWorth = ( parsedData.rates.CNY / 100 ) * 18.90
-    let yenWorth = ( parsedData.rates.JPY / 100 ) * 10.17
-    let inrWorth = ( parsedData.rates.INR / 100 ) * 4.85
-    let poundWorth = ( parsedData.rates.GBP / 100 ) * 4.78
-    let brazillianRealWorth = ( parsedData.rates.BRL / 100 ) * 3.84
-    let cadWorth = ( parsedData.rates.CAD / 100 ) * 3.18
-    let swissFrancWorth = ( parsedData.rates.CHF / 100 ) * 1.12
-    //console.log(swissFrancWorth);
-    
-    // Ma
+  const data = await sendRequest(
+    "GET",
+    "https://api.ratesapi.io/api/latest?base=USD",
+    ""
+  );
 
-    //=$AL$14*(D11+G11+J11+M11+P11+S11+V11+Y11+AA11)+AD11+AG11
+  const parsedData = await JSON.parse(data);
 
-    let fiatTotal = 
-        usdWorth + euroWorth + yuanWorth + yenWorth + inrWorth + poundWorth + brazillianRealWorth + cadWorth + swissFrancWorth
-    //console.log(fiatTotal);
-    
-    let fiatPercentage = ( fiatTotal / 100 ) * 80
-    //console.log(fiatPercentage);
+  const usdWorth = (parsedData.rates.USD / 100) * 29.93;
+  const euroWorth = (parsedData.rates.EUR / 100) * 23.23;
+  const yuanWorth = (parsedData.rates.CNY / 100) * 18.9;
+  const yenWorth = (parsedData.rates.JPY / 100) * 10.17;
+  const inrWorth = (parsedData.rates.INR / 100) * 4.85;
+  const poundWorth = (parsedData.rates.GBP / 100) * 4.78;
+  const brazillianRealWorth = (parsedData.rates.BRL / 100) * 3.84;
+  const cadWorth = (parsedData.rates.CAD / 100) * 3.18;
+  const swissFrancWorth = (parsedData.rates.CHF / 100) * 1.12;
 
-    let bitcoinPricRequest = await CoinGeckoClient.coins.fetch('bitcoin', {});
-    let bitcoinPrice = bitcoinPricRequest.data.market_data.current_price.usd
-    let bitcoinPercentage = ( bitcoinPrice / 100 ) * 5
-    
-    let goldRequest = await goldPriceRequest(
-        'GET', 
-        'https://www.goldapi.io/api/XAU/USD'
-    )
-    
-    let goldData = JSON.parse(goldRequest)
-    let goldPrice = goldData.price
-    let goldsPercentage = ( goldPrice / 100 ) * 15
-    
-    console.log({ 
-        goldsPercentage: goldsPercentage,  
-        bitcoinPercentage: bitcoinPercentage,
-        fiatPercentage: fiatPercentage
-    });
+  const fiatTotal =
+    usdWorth +
+    euroWorth +
+    yuanWorth +
+    yenWorth +
+    inrWorth +
+    poundWorth +
+    brazillianRealWorth +
+    cadWorth +
+    swissFrancWorth;
 
-    console.log(goldsPercentage + bitcoinPercentage + fiatPercentage );
-    
-    
-    return { 
-        goldsPercentage: goldsPercentage,  
-        bitcoinPercentage: bitcoinPercentage,
-        fiatPercentage: fiatPercentage
-    }
-}
+  const fiatPercentage = (fiatTotal / 100) * 80;
 
-GMU()
+  const bitcoinPrice = await getBTCPrice();
+  const bitcoinPercentage = (bitcoinPrice / 100) * 5;
 
-const testGoldPrice = async () => {
-    let goldRequest = await goldPriceRequest(
-        'GET', 
-        'https://www.goldapi.io/api/XAU/USD'
-    )
-    
-    let goldData = JSON.parse(goldRequest)
-    let goldPrice = goldData.price
-    let goldsPercentage = ( goldPrice / 100 ) * 15
-    console.log(goldsPercentage);
-    
-}
+  const goldPrice = await getGoldPrice();
+  const goldsPercentage = (goldPrice / 100) * 15;
 
-//testGoldPrice()
+  console.log("gold weighted price", goldsPercentage);
+  console.log("bitcoin weighted price", bitcoinPercentage);
+  console.log("fiat weighted price", fiatPercentage);
 
-const testBtcPrice = async () => {
-    let bitcoinPricRequest = await CoinGeckoClient.coins.fetch('bitcoin', {});
-    let bitcoinPrice = bitcoinPricRequest.data.market_data.current_price.usd
-    let bitcoinPercentage = ( bitcoinPrice / 100 ) * 5
+  const indexPrice = goldsPercentage + bitcoinPercentage + fiatPercentage;
+  const startingPrice = 3025;
+  const normalizedIndexPrice = indexPrice / startingPrice;
 
-    console.log(bitcoinPercentage);
-}
+  console.log("starting price", startingPrice);
+  console.log("index price", indexPrice);
+  console.log("normalized index price", normalizedIndexPrice);
 
-//testBtcPrice()
+  return normalizedIndexPrice;
+};
 
-// export default class GMU { 
-//     public storedFiatData = []
-//     public storedFiatValues: any = {}
+const getGoldPrice = async () => {
+  const goldRequest = await goldPriceRequest(
+    "GET",
+    "https://www.goldapi.io/api/XAU/USD"
+  );
 
-//     constructor() {
+  const goldData = JSON.parse(goldRequest);
+  return goldData.price;
+};
 
-//     }
+const getBTCPrice = async () => {
+  const bitcoinPricRequest = await CoinGeckoClient.coins.fetch("bitcoin", {});
+  return bitcoinPricRequest.data.market_data.current_price.usd;
+};
 
-//     async updateFiatPrices() {
-//         const data = await sendRequest(
-//             'GET', 
-//             'https://api.ratesapi.io/api/latest?base=USD',
-//             ''
-//         )
-        
-//         let parsedData = await JSON.parse(data)
-//         this.storedFiatValues.USD = parsedData.rates.USD       
-//         this.storedFiatValues.EUR = parsedData.rates.EUR
-//         this.storedFiatValues.CNY = parsedData.rates.CNY
-//         this.storedFiatValues.JPY = parsedData.rates.JPY
-//         this.storedFiatValues.INR = parsedData.rates.INR
-//         this.storedFiatValues.GBP = parsedData.rates.GBP
-//         this.storedFiatValues.BRL = parsedData.rates.BRL
-//         this.storedFiatValues.CAD = parsedData.rates.CAD
-//         this.storedFiatValues.CHF = parsedData.rates.CHF
-        
-//         this.storedFiatData.push(this.storedFiatValues)
-//         console.log(this.storedFiatData);
-        
-//         return { success: true }
-//     }
-
-//     async getFiatPrices() {
-//         return this.storedFiatData
-//     }
-// }
-
-// const run = async () => {
-//     const g = new GMU()
-//     //g.updateFiatPrices()
-//     console.log(await g.getFiatPrices());
-// }
-
-// run()
+GMU();
