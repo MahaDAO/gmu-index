@@ -1,0 +1,36 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "baseUrl": ".",
+        "target": "es6",
+        "types": [
+            "node",
+            "express"
+        ],
+        "noImplicitAny": false,
+        "sourceMap": false,
+        "lib": [
+            "es5",
+            "es6",
+            "es2016",
+            "es2017",
+            "dom"
+        ],
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "allowJs": true,
+        "jsx": "react",
+        "outDir": "dist"
+    },
+    "include": [
+        "src"
+    ],
+    "exclude": [
+        "**/*test.tsx",
+        "node_modules",
+        "dist",
+        "config",
+        "electron",
+        "release"
+    ]
+}
